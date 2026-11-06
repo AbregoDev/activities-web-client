@@ -1,0 +1,140 @@
+:host {
+  display: block;
+  min-width: 0;
+  color: var(--p-text-color, #27272a);
+}
+
+.week-view {
+  padding: 1.5rem;
+  max-width: 100rem;
+  margin-inline: auto;
+}
+
+.week-toolbar,
+.week-options,
+.start-option,
+.weekend-option {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.week-toolbar {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.week-options {
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  font-size: 0.875rem;
+}
+
+.start-option {
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.weekend-option {
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.calendar-scroll {
+  max-height: 72vh;
+  overflow: auto;
+  border: 1px solid var(--p-content-border-color, #e4e4e7);
+  background: var(--p-content-background, #fff);
+  isolation: isolate;
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color, #047857);
+    outline-offset: 3px;
+  }
+}
+
+table {
+  width: 100%;
+  min-width: 56rem;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.875rem;
+}
+
+.time-column {
+  width: 5rem;
+}
+
+th,
+td {
+  box-sizing: border-box;
+  border-right: 1px solid var(--p-content-border-color, #e4e4e7);
+  border-bottom: 1px solid var(--p-content-border-color, #e4e4e7);
+
+  &:last-child {
+    border-right: 0;
+  }
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 3.25rem;
+  padding: 0.75rem 0.5rem;
+  background: var(--p-content-background, #fff);
+  font-weight: 700;
+}
+
+tbody th,
+tbody td {
+  height: 3.5rem;
+}
+
+tbody th,
+.time-heading {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--p-content-background, #fff);
+  color: var(--p-text-muted-color, #52525b);
+  text-align: center;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.time-heading {
+  z-index: 3;
+}
+
+.weekend {
+  background: var(--p-content-hover-background, #f4f4f5);
+}
+
+tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .week-view {
+    padding: 0.75rem;
+  }
+
+  .week-toolbar,
+  .week-options {
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .week-options {
+    width: 100%;
+  }
+}

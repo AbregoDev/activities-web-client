@@ -1,0 +1,56 @@
+<section class="week-view" aria-label="Week calendar">
+  <header class="week-toolbar">
+    <h1>Week</h1>
+    <div class="week-options">
+      <div class="start-option">
+        <span id="week-start-label">Week starts on</span>
+        <p-selectbutton
+          [options]="startOptions"
+          optionLabel="label"
+          optionValue="value"
+          [allowEmpty]="false"
+          [ngModel]="weekStartsOn()"
+          (ngModelChange)="weekStartsOn.set($event)"
+          ariaLabelledBy="week-start-label"
+        />
+      </div>
+      <label class="weekend-option">
+        <p-toggleswitch
+          [ngModel]="showWeekends()"
+          (ngModelChange)="showWeekends.set($event)"
+          ariaLabel="Show weekends"
+        />
+        <span>Show weekends</span>
+      </label>
+    </div>
+  </header>
+
+  <div class="calendar-scroll" tabindex="0" role="region" aria-label="Hourly week calendar">
+    <table aria-label="Weekly schedule">
+      <colgroup>
+        <col class="time-column" />
+        @for (day of visibleDays(); track day.name) {
+          <col />
+        }
+      </colgroup>
+      <thead>
+        <tr>
+          <th class="time-heading" scope="col">Time</th>
+          @for (day of visibleDays(); track day.name) {
+            <th scope="col" [class.weekend]="day.weekend">{{ day.name }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (hour of hours; track hour) {
+          <tr>
+            <th scope="row">{{ hour }}</th>
+            @for (day of visibleDays(); track day.name) {
+              <td [class.weekend]="day.weekend"></td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

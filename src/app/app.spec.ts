@@ -14,10 +14,11 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render title', async () => {
+  it('should render the week view', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, activities-frontend');
+    expect(compiled.querySelector('app-week-view')).toBeTruthy();
+    expect(compiled.querySelector('table')?.getAttribute('aria-label')).toBe('Weekly schedule');
   });
 });
