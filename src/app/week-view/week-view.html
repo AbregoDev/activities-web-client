@@ -1,6 +1,14 @@
 <section class="week-view" aria-label="Week calendar">
   <header class="week-toolbar">
-    <h1>Week</h1>
+    <div class="week-heading">
+      <h1>Week</h1>
+      <nav class="week-navigation" aria-label="Week navigation">
+        <button type="button" aria-label="Previous week" (click)="moveWeek(-1)">Previous</button>
+        <p class="week-range" aria-live="polite" aria-atomic="true">{{ weekLabel() }}</p>
+        <button type="button" aria-label="Next week" (click)="moveWeek(1)">Next</button>
+        <button type="button" (click)="goToCurrentWeek()">Current week</button>
+      </nav>
+    </div>
     <div class="week-options">
       <div class="start-option">
         <span id="week-start-label">Week starts on</span>
@@ -29,15 +37,23 @@
     <table aria-label="Weekly schedule">
       <colgroup>
         <col class="time-column" />
-        @for (day of visibleDays(); track day.name) {
+        @for (day of visibleDays(); track day.dateKey) {
           <col />
         }
       </colgroup>
       <thead>
         <tr>
           <th class="time-heading" scope="col">Time</th>
-          @for (day of visibleDays(); track day.name) {
-            <th scope="col" [class.weekend]="day.weekend">{{ day.name }}</th>
+          @for (day of visibleDays(); track day.dateKey) {
+            <th
+              scope="col"
+              [class.weekend]="day.weekend"
+              [class.today]="day.isToday"
+              [attr.aria-current]="day.isToday ? 'date' : null"
+            >
+              <span>{{ day.name }}</span>
+              <time [attr.datetime]="day.dateKey">{{ day.dateLabel }}</time>
+            </th>
           }
         </tr>
       </thead>
@@ -45,8 +61,8 @@
         @for (hour of hours; track hour) {
           <tr>
             <th scope="row">{{ hour }}</th>
-            @for (day of visibleDays(); track day.name) {
-              <td [class.weekend]="day.weekend"></td>
+            @for (day of visibleDays(); track day.dateKey) {
+              <td [class.weekend]="day.weekend" [class.today]="day.isToday"></td>
             }
           </tr>
         }
