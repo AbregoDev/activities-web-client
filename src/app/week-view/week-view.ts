@@ -9,6 +9,7 @@ import {
   distinctUntilChanged,
   finalize,
   forkJoin,
+  interval,
   map,
   merge,
   switchMap,
@@ -29,6 +30,7 @@ interface DayActivity {
 }
 
 const MINUTE_PRECISION = 5;
+const CURRENT_TIME_UPDATE_INTERVAL = 5 * 60 * 1000;
 
 @Component({
   selector: 'app-week-view',
@@ -43,6 +45,11 @@ export class WeekView {
   private readonly selectedDate = signal(new Date());
   private readonly todayDateKey = signal(this.toDateKey(this.selectedDate()));
   private readonly monthFormatter = new Intl.DateTimeFormat('en', { month: 'short' });
+  private readonly currentTime = signal(new Date());
+  protected readonly currentTimePositionMinutes = computed(() => {
+    const now = this.currentTime();
+    return now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+  });
 
   protected readonly weekStartsOn = signal<WeekStart>('monday');
   protected readonly showWeekends = signal(true);
@@ -115,6 +122,10 @@ export class WeekView {
   });
 
   constructor() {
+    interval(CURRENT_TIME_UPDATE_INTERVAL)
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.currentTime.set(new Date()));
+
     merge(
       toObservable(this.weekRange).pipe(
         distinctUntilChanged(

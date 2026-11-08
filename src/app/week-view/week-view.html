@@ -72,6 +72,12 @@
         </div>
       }
       <div class="activity-layer">
+        <div
+          class="current-time-indicator"
+          role="separator"
+          aria-label="Current time"
+          [style.--current-time-minutes]="currentTimePositionMinutes()"
+        ></div>
         @for (day of visibleDays(); track day.dateKey) {
           <div class="activity-column">
             @for (item of activitiesByDay().get(day.dateKey); track item.activity.id) {

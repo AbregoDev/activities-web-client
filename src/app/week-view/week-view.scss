@@ -200,6 +200,16 @@ h1 {
   pointer-events: none;
 }
 
+.current-time-indicator {
+  position: absolute;
+  top: calc(var(--current-time-minutes) / 60 * var(--hour-height));
+  right: 0;
+  left: 0;
+  z-index: 1;
+  border-top: 2px solid var(--p-primary-color, #047857);
+  pointer-events: none;
+}
+
 .activity-column {
   position: relative;
   grid-row: 1;
