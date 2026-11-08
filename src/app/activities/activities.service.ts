@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, defer, of, tap } from 'rxjs';
-import { Activity, ActivityDateRange } from './activity.interface';
+import { Activity } from './activity.interface';
 
 interface CachedActivities {
   readonly activities: readonly Activity[];
@@ -13,29 +13,37 @@ export class ActivitiesService {
   private readonly http = inject(HttpClient);
   private readonly cache = new Map<string, CachedActivities>();
   private readonly cacheTtlMs = 5 * 60 * 1000;
-  private readonly maxCachedRanges = 20;
+  private readonly maxCachedMonths = 5;
 
-  getActivities(range: ActivityDateRange, refresh = false): Observable<readonly Activity[]> {
+  getActivitiesByMonth(
+    year: number,
+    month: number,
+    refresh = false,
+  ): Observable<readonly Activity[]> {
     return defer(() => {
+      if (!Number.isInteger(year) || year < 1 || year > 9999) {
+        throw new RangeError('Year must be an integer between 1 and 9999.');
+      }
+      if (!Number.isInteger(month) || month < 1 || month > 12) {
+        throw new RangeError('Month must be an integer between 1 and 12.');
+      }
+
       this.removeExpiredElementsInCache();
 
-      const key = `${range.startDate}/${range.endDate}`;
+      const key = `${year}-${String(month).padStart(2, '0')}`;
       const cached = this.cache.get(key);
-      // Since the cache is limited to maxCachedRanges, removing the cached element and then resetting it
-      // ensures it'll not be removed when the cache exceeds the maxCachedRanges limit.
-      // (Below the code deletes the older entry)
+      // Reinserting a cache hit keeps recently used months last in eviction order.
       this.cache.delete(key);
       if (!refresh && cached) {
         this.cache.set(key, cached);
         return of(cached.activities);
       }
 
-      const url = '/api/activities/range';
-      const params = { startDate: range.startDate, endDate: range.endDate };
-      return this.http.get<readonly Activity[]>(url, { params })
-        .pipe(
-          tap(activities => this.writeActivitiesToCache(key, activities))
-        );
+      const url = '/api/activities/GetActivitiesByMonth';
+      const params = { year, month };
+      return this.http
+        .get<readonly Activity[]>(url, { params })
+        .pipe(tap((activities) => this.writeActivitiesToCache(key, activities)));
     });
   }
 
@@ -58,7 +66,7 @@ export class ActivitiesService {
     }
   }
 
-  private writeActivitiesToCache(key: string, activities: any) {
+  private writeActivitiesToCache(key: string, activities: readonly Activity[]): void {
     this.cache.delete(key);
     this.cache.set(key, {
       activities,
@@ -78,7 +86,7 @@ export class ActivitiesService {
   }
 
   private removeExcessElementsInCache(): void {
-    while (this.cache.size > this.maxCachedRanges) {
+    while (this.cache.size > this.maxCachedMonths) {
       const oldestKey = this.cache.keys().next().value;
       if (oldestKey !== undefined) {
         this.cache.delete(oldestKey);

@@ -3,10 +3,12 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import {
   EMPTY,
+  Observable,
   Subject,
   catchError,
   distinctUntilChanged,
   finalize,
+  forkJoin,
   map,
   merge,
   switchMap,
@@ -15,7 +17,7 @@ import {
 import { SelectButton } from 'primeng/selectbutton';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 import { ActivitiesService } from '../activities/activities.service';
-import { Activity } from '../activities/activity.interface';
+import { Activity, ActivityDateRange } from '../activities/activity.interface';
 import { ActivityItem } from '../activities/activity-item/activity-item';
 
 type WeekStart = 'monday' | 'sunday';
@@ -102,7 +104,8 @@ export class WeekView {
   protected readonly activitiesByDay = computed(() => {
     const byDay = new Map<string, DayActivity[]>();
     for (const activity of this.activities()) {
-      const start = Math.floor(this.toMinutes(activity.startTime) / MINUTE_PRECISION) * MINUTE_PRECISION;
+      const start =
+        Math.floor(this.toMinutes(activity.startTime) / MINUTE_PRECISION) * MINUTE_PRECISION;
       const end = Math.ceil(this.toMinutes(activity.endTime) / MINUTE_PRECISION) * MINUTE_PRECISION;
       const dayActivities = byDay.get(activity.date) ?? [];
       dayActivities.push({ activity, startMinutes: start, durationMinutes: end - start });
@@ -126,7 +129,7 @@ export class WeekView {
         switchMap(({ range, refresh }) => {
           this.loadingActivities.set(true);
           this.activities.set([]);
-          return this.activitiesService.getActivities(range, refresh).pipe(
+          return this.getActivitiesForWeek(range, refresh).pipe(
             tap((activities) => this.activities.set(activities)),
             catchError((error: unknown) => {
               console.error('Failed to fetch activities for week', range, error);
@@ -138,6 +141,25 @@ export class WeekView {
         takeUntilDestroyed(),
       )
       .subscribe();
+  }
+
+  private getActivitiesForWeek(
+    range: ActivityDateRange,
+    refresh: boolean,
+  ): Observable<readonly Activity[]> {
+    const months = new Set([range.startDate.slice(0, 7), range.endDate.slice(0, 7)]);
+    return forkJoin(
+      Array.from(months, (monthKey) => {
+        const [year, month] = monthKey.split('-').map(Number);
+        return this.activitiesService.getActivitiesByMonth(year, month, refresh);
+      }),
+    ).pipe(
+      map((monthsActivities) =>
+        monthsActivities
+          .flat()
+          .filter((activity) => activity.date >= range.startDate && activity.date <= range.endDate),
+      ),
+    );
   }
 
   protected refreshActivities(): void {
