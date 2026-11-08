@@ -15,12 +15,22 @@ import {
 import { SelectButton } from 'primeng/selectbutton';
 import { ToggleSwitch } from 'primeng/toggleswitch';
 import { ActivitiesService } from '../activities/activities.service';
+import { Activity } from '../activities/activity.interface';
+import { ActivityItem } from '../activities/activity-item/activity-item';
 
 type WeekStart = 'monday' | 'sunday';
 
+interface DayActivity {
+  readonly activity: Activity;
+  readonly startMinutes: number;
+  readonly durationMinutes: number;
+}
+
+const MINUTE_PRECISION = 5;
+
 @Component({
   selector: 'app-week-view',
-  imports: [FormsModule, SelectButton, ToggleSwitch],
+  imports: [FormsModule, SelectButton, ToggleSwitch, ActivityItem],
   templateUrl: './week-view.html',
   styleUrl: './week-view.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,6 +45,7 @@ export class WeekView {
   protected readonly weekStartsOn = signal<WeekStart>('monday');
   protected readonly showWeekends = signal(true);
   protected readonly loadingActivities = signal(false);
+  private readonly activities = signal<readonly Activity[]>([]);
   protected readonly startOptions = [
     { label: 'Monday', value: 'monday' },
     { label: 'Sunday', value: 'sunday' },
@@ -88,6 +99,18 @@ export class WeekView {
     return this.showWeekends() ? days : days.filter((day) => !day.weekend);
   });
 
+  protected readonly activitiesByDay = computed(() => {
+    const byDay = new Map<string, DayActivity[]>();
+    for (const activity of this.activities()) {
+      const start = Math.floor(this.toMinutes(activity.startTime) / MINUTE_PRECISION) * MINUTE_PRECISION;
+      const end = Math.ceil(this.toMinutes(activity.endTime) / MINUTE_PRECISION) * MINUTE_PRECISION;
+      const dayActivities = byDay.get(activity.date) ?? [];
+      dayActivities.push({ activity, startMinutes: start, durationMinutes: end - start });
+      byDay.set(activity.date, dayActivities);
+    }
+    return byDay;
+  });
+
   constructor() {
     merge(
       toObservable(this.weekRange).pipe(
@@ -102,8 +125,9 @@ export class WeekView {
       .pipe(
         switchMap(({ range, refresh }) => {
           this.loadingActivities.set(true);
+          this.activities.set([]);
           return this.activitiesService.getActivities(range, refresh).pipe(
-            tap((activities) => console.log('Activities for week', range, activities)),
+            tap((activities) => this.activities.set(activities)),
             catchError((error: unknown) => {
               console.error('Failed to fetch activities for week', range, error);
               return EMPTY;
@@ -120,6 +144,24 @@ export class WeekView {
     if (!this.loadingActivities()) {
       this.refreshRequests.next();
     }
+  }
+
+  protected setActivityCompleted(id: string, isCompleted: boolean): void {
+    this.patchLocalActivity(id, isCompleted);
+    this.activitiesService.updateActivityCompletion(id, isCompleted).subscribe({
+      error: () => this.patchLocalActivity(id, !isCompleted),
+    });
+  }
+
+  private patchLocalActivity(id: string, isCompleted: boolean): void {
+    this.activities.update((activities) =>
+      activities.map((activity) => (activity.id === id ? { ...activity, isCompleted } : activity)),
+    );
+  }
+
+  private toMinutes(time: string): number {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
   }
 
   protected moveWeek(direction: -1 | 1): void {

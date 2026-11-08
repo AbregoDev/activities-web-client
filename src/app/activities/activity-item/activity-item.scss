@@ -1,0 +1,31 @@
+:host {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  box-sizing: border-box;
+  height: 100%;
+  padding: 0.25rem 0.5rem;
+  overflow: hidden;
+  border-left: 3px solid var(--p-primary-color, #047857);
+  border-radius: 0.25rem;
+  background: color-mix(in srgb, var(--p-primary-color, #047857) 30%, var(--p-content-background, #fff));
+  color: var(--p-text-color, #27272a);
+  font-size: 0.8125rem;
+}
+
+:host(.completed) {
+  background: color-mix(in srgb, var(--p-primary-color, #047857) 10%, var(--p-content-background, #fff));
+
+  label {
+    text-decoration: line-through;
+  }
+}
+
+label {
+  min-width: 0;
+  overflow: hidden;
+  line-height: 1.25rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}

@@ -1,0 +1,7 @@
+<p-checkbox
+  [inputId]="'activity-' + activity().id"
+  [binary]="true"
+  [ngModel]="activity().isCompleted"
+  (ngModelChange)="completedChange.emit($event)"
+/>
+<label [for]="'activity-' + activity().id" [title]="activity().name">{{ activity().name }}</label>

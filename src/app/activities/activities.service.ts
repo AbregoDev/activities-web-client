@@ -39,6 +39,25 @@ export class ActivitiesService {
     });
   }
 
+  updateActivityCompletion(id: string, isCompleted: boolean): Observable<Activity> {
+    return this.http
+      .patch<Activity>(`/api/activities/${id}`, { isCompleted })
+      .pipe(tap((updated) => this.patchActivityInCache(updated)));
+  }
+
+  private patchActivityInCache(updated: Activity): void {
+    for (const [key, entry] of this.cache) {
+      if (entry.activities.some((activity) => activity.id === updated.id)) {
+        this.cache.set(key, {
+          ...entry,
+          activities: entry.activities.map((activity) =>
+            activity.id === updated.id ? updated : activity,
+          ),
+        });
+      }
+    }
+  }
+
   private writeActivitiesToCache(key: string, activities: any) {
     this.cache.delete(key);
     this.cache.set(key, {

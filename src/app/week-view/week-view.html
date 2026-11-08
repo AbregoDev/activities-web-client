@@ -37,39 +37,55 @@
   </header>
 
   <div class="calendar-scroll" tabindex="0" role="region" aria-label="Hourly week calendar">
-    <table aria-label="Weekly schedule">
-      <colgroup>
-        <col class="time-column" />
+    <div
+      class="calendar"
+      role="grid"
+      aria-label="Weekly schedule"
+      [style.--day-count]="visibleDays().length"
+    >
+      <div class="calendar-row" role="row">
+        <div class="time-heading" role="columnheader">Time</div>
         @for (day of visibleDays(); track day.dateKey) {
-          <col />
+          <div
+            class="day-heading"
+            role="columnheader"
+            [class.weekend]="day.weekend"
+            [class.today]="day.isToday"
+            [attr.aria-current]="day.isToday ? 'date' : null"
+          >
+            <span>{{ day.name }}</span>
+            <time [attr.datetime]="day.dateKey">{{ day.dateLabel }}</time>
+          </div>
         }
-      </colgroup>
-      <thead>
-        <tr>
-          <th class="time-heading" scope="col">Time</th>
+      </div>
+      @for (hour of hours; track hour) {
+        <div class="calendar-row" role="row">
+          <div class="hour-heading" role="rowheader">{{ hour }}</div>
           @for (day of visibleDays(); track day.dateKey) {
-            <th
-              scope="col"
+            <div
+              class="hour-cell"
+              role="gridcell"
               [class.weekend]="day.weekend"
               [class.today]="day.isToday"
-              [attr.aria-current]="day.isToday ? 'date' : null"
-            >
-              <span>{{ day.name }}</span>
-              <time [attr.datetime]="day.dateKey">{{ day.dateLabel }}</time>
-            </th>
+            ></div>
           }
-        </tr>
-      </thead>
-      <tbody>
-        @for (hour of hours; track hour) {
-          <tr>
-            <th scope="row">{{ hour }}</th>
-            @for (day of visibleDays(); track day.dateKey) {
-              <td [class.weekend]="day.weekend" [class.today]="day.isToday"></td>
+        </div>
+      }
+      <div class="activity-layer">
+        @for (day of visibleDays(); track day.dateKey) {
+          <div class="activity-column">
+            @for (item of activitiesByDay().get(day.dateKey); track item.activity.id) {
+              <app-activity-item
+                class="activity"
+                [style.--start]="item.startMinutes"
+                [style.--duration]="item.durationMinutes"
+                [activity]="item.activity"
+                (completedChange)="setActivityCompleted(item.activity.id, $event)"
+              />
             }
-          </tr>
+          </div>
         }
-      </tbody>
-    </table>
+      </div>
+    </div>
   </div>
 </section>
