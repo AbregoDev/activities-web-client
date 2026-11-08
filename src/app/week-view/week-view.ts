@@ -20,6 +20,7 @@ import { ToggleSwitch } from 'primeng/toggleswitch';
 import { ActivitiesService } from '../activities/activities.service';
 import { Activity, ActivityDateRange } from '../activities/activity.interface';
 import { ActivityItem } from '../activities/activity-item/activity-item';
+import { CreateActivityDialog } from '../activities/create-activity-dialog/create-activity-dialog';
 
 type WeekStart = 'monday' | 'sunday';
 
@@ -34,7 +35,7 @@ const CURRENT_TIME_UPDATE_INTERVAL = 5 * 60 * 1000;
 
 @Component({
   selector: 'app-week-view',
-  imports: [FormsModule, SelectButton, ToggleSwitch, ActivityItem],
+  imports: [FormsModule, SelectButton, ToggleSwitch, ActivityItem, CreateActivityDialog],
   templateUrl: './week-view.html',
   styleUrl: './week-view.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -54,6 +55,7 @@ export class WeekView {
   protected readonly weekStartsOn = signal<WeekStart>('monday');
   protected readonly showWeekends = signal(true);
   protected readonly loadingActivities = signal(false);
+  protected readonly createActivityDialogVisible = signal(false);
   private readonly activities = signal<readonly Activity[]>([]);
   protected readonly startOptions = [
     { label: 'Monday', value: 'monday' },
@@ -177,6 +179,11 @@ export class WeekView {
     if (!this.loadingActivities()) {
       this.refreshRequests.next();
     }
+  }
+
+  protected activityCreated(): void {
+    this.createActivityDialogVisible.set(false);
+    this.refreshRequests.next();
   }
 
   protected setActivityCompleted(id: string, isCompleted: boolean): void {

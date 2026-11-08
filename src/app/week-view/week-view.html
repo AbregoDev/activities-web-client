@@ -10,6 +10,7 @@
         <button type="button" [disabled]="loadingActivities()" (click)="refreshActivities()">
           Refresh
         </button>
+        <button type="button" (click)="createActivityDialogVisible.set(true)">New activity</button>
       </nav>
     </div>
     <div class="week-options">
@@ -35,6 +36,12 @@
       </label>
     </div>
   </header>
+
+  <app-create-activity-dialog
+    [visible]="createActivityDialogVisible()"
+    (visibleChange)="createActivityDialogVisible.set($event)"
+    (activityCreated)="activityCreated()"
+  />
 
   <div class="calendar-scroll" tabindex="0" role="region" aria-label="Hourly week calendar">
     <div

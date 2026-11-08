@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, defer, of, tap } from 'rxjs';
-import { Activity } from './activity.interface';
+import { Activity, CreateActivityRequest } from './activity.interface';
 
 interface CachedActivities {
   readonly activities: readonly Activity[];
@@ -45,6 +45,10 @@ export class ActivitiesService {
         .get<readonly Activity[]>(url, { params })
         .pipe(tap((activities) => this.writeActivitiesToCache(key, activities)));
     });
+  }
+
+  createActivity(request: CreateActivityRequest): Observable<Activity> {
+    return this.http.post<Activity>('/api/activities', request);
   }
 
   updateActivityCompletion(id: string, isCompleted: boolean): Observable<Activity> {

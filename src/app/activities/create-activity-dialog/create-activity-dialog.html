@@ -1,0 +1,81 @@
+<p-dialog
+  header="New activity"
+  [visible]="visible()"
+  [modal]="true"
+  [closable]="!isSubmitting()"
+  [closeOnEscape]="!isSubmitting()"
+  [dismissableMask]="!isSubmitting()"
+  [style]="{ width: 'min(30rem, calc(100vw - 2rem))' }"
+  (visibleChange)="visibleChange.emit($event)"
+>
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="form-fields">
+      <label for="activity-name">Name</label>
+      <input id="activity-name" type="text" formControlName="name" autocomplete="off" />
+      @if (form.controls.name.touched && form.controls.name.hasError('required')) {
+        <small class="field-error" id="activity-name-error">Enter an activity name.</small>
+      }
+
+      <label for="activity-date">Date</label>
+      <p-datepicker
+        inputId="activity-date"
+        formControlName="date"
+        appendTo="body"
+        [showIcon]="true"
+        [readonlyInput]="true"
+        dateFormat="dd/mm/yy"
+        ariaLabel="Activity date"
+      />
+      @if (form.controls.date.touched && form.controls.date.hasError('required')) {
+        <small class="field-error">Choose a date.</small>
+      }
+
+      <label for="activity-start-time">Start time</label>
+      <p-datepicker
+        inputId="activity-start-time"
+        formControlName="startTime"
+        appendTo="body"
+        [timeOnly]="true"
+        [hourFormat]="'24'"
+        [showIcon]="true"
+        [readonlyInput]="true"
+        ariaLabel="Activity start time"
+      />
+      @if (form.controls.startTime.touched && form.controls.startTime.hasError('required')) {
+        <small class="field-error">Choose a start time.</small>
+      }
+
+      <label for="activity-end-time">End time</label>
+      <p-datepicker
+        inputId="activity-end-time"
+        formControlName="endTime"
+        appendTo="body"
+        [timeOnly]="true"
+        [hourFormat]="'24'"
+        [showIcon]="true"
+        [readonlyInput]="true"
+        ariaLabel="Activity end time"
+      />
+      @if (form.controls.endTime.touched && form.controls.endTime.hasError('required')) {
+        <small class="field-error">Choose an end time.</small>
+      }
+      @if (
+        form.hasError('invalidTimeRange') &&
+        (form.controls.startTime.touched || form.controls.endTime.touched)
+      ) {
+        <small class="field-error">End time must be after start time.</small>
+      }
+
+      @if (submitError(); as error) {
+        <p class="submit-error" role="alert">{{ error }}</p>
+      }
+    </div>
+
+    <div class="form-actions">
+      <button type="button" [disabled]="isSubmitting()" (click)="close()">Cancel</button>
+      <button type="submit" [disabled]="isSubmitting()">
+        {{ isSubmitting() ? 'Creating…' : 'Create activity' }}
+      </button>
+    </div>
+  </form>
+</p-dialog>

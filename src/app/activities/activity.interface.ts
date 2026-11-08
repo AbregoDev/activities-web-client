@@ -8,6 +8,13 @@ export interface Activity {
   readonly isCompleted: boolean;
 }
 
+export interface CreateActivityRequest {
+  readonly name: string;
+  readonly date: string;
+  readonly startTime: string;
+  readonly endTime: string;
+}
+
 export interface ActivityDateRange {
   readonly startDate: string;
   readonly endDate: string;
