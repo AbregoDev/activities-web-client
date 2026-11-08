@@ -1,7 +1,20 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import {
+  EMPTY,
+  Subject,
+  catchError,
+  distinctUntilChanged,
+  finalize,
+  map,
+  merge,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { SelectButton } from 'primeng/selectbutton';
 import { ToggleSwitch } from 'primeng/toggleswitch';
+import { ActivitiesService } from '../activities/activities.service';
 
 type WeekStart = 'monday' | 'sunday';
 
@@ -13,12 +26,15 @@ type WeekStart = 'monday' | 'sunday';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WeekView {
+  private readonly activitiesService = inject(ActivitiesService);
+  private readonly refreshRequests = new Subject<void>();
   private readonly selectedDate = signal(new Date());
   private readonly todayDateKey = signal(this.toDateKey(this.selectedDate()));
   private readonly monthFormatter = new Intl.DateTimeFormat('en', { month: 'short' });
 
   protected readonly weekStartsOn = signal<WeekStart>('monday');
   protected readonly showWeekends = signal(true);
+  protected readonly loadingActivities = signal(false);
   protected readonly startOptions = [
     { label: 'Monday', value: 'monday' },
     { label: 'Sunday', value: 'sunday' },
@@ -71,6 +87,40 @@ export class WeekView {
     const days = this.weekDays();
     return this.showWeekends() ? days : days.filter((day) => !day.weekend);
   });
+
+  constructor() {
+    merge(
+      toObservable(this.weekRange).pipe(
+        distinctUntilChanged(
+          (previous, current) =>
+            previous.startDate === current.startDate && previous.endDate === current.endDate,
+        ),
+        map((range) => ({ range, refresh: false })),
+      ),
+      this.refreshRequests.pipe(map(() => ({ range: this.weekRange(), refresh: true }))),
+    )
+      .pipe(
+        switchMap(({ range, refresh }) => {
+          this.loadingActivities.set(true);
+          return this.activitiesService.getActivities(range, refresh).pipe(
+            tap((activities) => console.log('Activities for week', range, activities)),
+            catchError((error: unknown) => {
+              console.error('Failed to fetch activities for week', range, error);
+              return EMPTY;
+            }),
+            finalize(() => this.loadingActivities.set(false)),
+          );
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+  }
+
+  protected refreshActivities(): void {
+    if (!this.loadingActivities()) {
+      this.refreshRequests.next();
+    }
+  }
 
   protected moveWeek(direction: -1 | 1): void {
     this.todayDateKey.set(this.toDateKey(new Date()));

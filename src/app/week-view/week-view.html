@@ -7,6 +7,9 @@
         <p class="week-range" aria-live="polite" aria-atomic="true">{{ weekLabel() }}</p>
         <button type="button" aria-label="Next week" (click)="moveWeek(1)">Next</button>
         <button type="button" (click)="goToCurrentWeek()">Current week</button>
+        <button type="button" [disabled]="loadingActivities()" (click)="refreshActivities()">
+          Refresh
+        </button>
       </nav>
     </div>
     <div class="week-options">
