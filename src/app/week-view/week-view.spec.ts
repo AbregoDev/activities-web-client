@@ -2,17 +2,57 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { SelectButton } from 'primeng/selectbutton';
 import { ToggleSwitch } from 'primeng/toggleswitch';
+import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ActivitiesService } from '../activities/activities.service';
+import { Activity } from '../activities/activity.interface';
 import { WeekView } from './week-view';
 
 describe('WeekView', () => {
   let fixture: ComponentFixture<WeekView>;
   let element: HTMLElement;
+  const activities: readonly Activity[] = [
+    {
+      id: 'd2fb3623-5424-4d1c-8fb1-7488c98faa58',
+      name: 'Study Statistic',
+      categoryId: null,
+      date: '2026-11-07',
+      startTime: '19:00:00',
+      endTime: '20:30:00',
+      isCompleted: false,
+    },
+    {
+      id: 'dd2b13a8-e626-49b4-ae84-169c58f0729c',
+      name: 'Walk the dog',
+      categoryId: null,
+      date: '2026-11-08',
+      startTime: '09:00:00',
+      endTime: '10:00:00',
+      isCompleted: true,
+    },
+    {
+      id: 'c8eb8525-9cb4-408f-bf90-a91d18cc4f35',
+      name: 'Study Physics',
+      categoryId: null,
+      date: '2026-11-08',
+      startTime: '20:30:00',
+      endTime: '21:30:00',
+      isCompleted: false,
+    },
+  ];
 
   beforeEach(async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date(2026, 10, 6, 12));
-    await TestBed.configureTestingModule({ imports: [WeekView] }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [WeekView],
+      providers: [
+        {
+          provide: ActivitiesService,
+          useValue: { getActivitiesByMonth: () => of(activities) },
+        },
+      ],
+    }).compileComponents();
     fixture = TestBed.createComponent(WeekView);
     element = fixture.nativeElement;
     await fixture.whenStable();
@@ -42,16 +82,16 @@ describe('WeekView', () => {
   }
 
   it('highlights only today across the header and all hourly cells', async () => {
-    expect(element.querySelectorAll('thead th.today')).toHaveLength(1);
-    expect(element.querySelector('thead th.today time')?.getAttribute('datetime')).toBe(
+    expect(element.querySelectorAll('.day-heading.today')).toHaveLength(1);
+    expect(element.querySelector('.day-heading.today time')?.getAttribute('datetime')).toBe(
       '2026-11-06',
     );
-    expect(element.querySelector('thead th.today')?.getAttribute('aria-current')).toBe('date');
-    expect(element.querySelectorAll('tbody td.today')).toHaveLength(24);
+    expect(element.querySelector('.day-heading.today')?.getAttribute('aria-current')).toBe('date');
+    expect(element.querySelectorAll('.hour-cell.today')).toHaveLength(24);
     await navigate('Next');
     expect(element.querySelectorAll('.today')).toHaveLength(0);
     await goToCurrentWeek();
-    expect(element.querySelectorAll('tbody td.today')).toHaveLength(24);
+    expect(element.querySelectorAll('.hour-cell.today')).toHaveLength(24);
     expect(fixture.componentInstance.weekRange().startDate).toBe('2026-11-02');
     await navigate('Previous');
     await goToCurrentWeek();
@@ -67,16 +107,16 @@ describe('WeekView', () => {
       startDate: '2026-11-08',
       endDate: '2026-11-14',
     });
-    expect(element.querySelector('thead th.today time')?.getAttribute('datetime')).toBe(
+    expect(element.querySelector('.day-heading.today time')?.getAttribute('datetime')).toBe(
       '2026-11-08',
     );
-    expect(element.querySelector('thead th.today')?.classList.contains('weekend')).toBe(true);
+    expect(element.querySelector('.day-heading.today')?.classList.contains('weekend')).toBe(true);
     fixture.debugElement
       .query(By.directive(ToggleSwitch))
       .triggerEventHandler('ngModelChange', false);
     await fixture.whenStable();
     expect(element.querySelectorAll('.today')).toHaveLength(0);
-    expect(element.querySelectorAll('thead time')).toHaveLength(5);
+    expect(element.querySelectorAll('.day-heading time')).toHaveLength(5);
     expect(fixture.componentInstance.weekRange().startDate).toBe('2026-11-08');
   });
 
@@ -87,7 +127,9 @@ describe('WeekView', () => {
       endDate: '2026-11-08',
     });
     expect(
-      Array.from(element.querySelectorAll('thead time'), (time) => time.getAttribute('datetime')),
+      Array.from(element.querySelectorAll('.day-heading time'), (time) =>
+        time.getAttribute('datetime'),
+      ),
     ).toEqual([
       '2026-11-02',
       '2026-11-03',
@@ -97,13 +139,13 @@ describe('WeekView', () => {
       '2026-11-07',
       '2026-11-08',
     ]);
-    expect(element.querySelectorAll('tbody tr')).toHaveLength(24);
+    expect(element.querySelectorAll('.hour-heading')).toHaveLength(24);
   });
 
   it('moves in both directions and restores the original week', async () => {
     await navigate('Next');
     expect(element.querySelector('.week-range')?.textContent).toBe('9/nov/2026 - 15/nov/2026');
-    expect(element.querySelector('thead time')?.getAttribute('datetime')).toBe('2026-11-09');
+    expect(element.querySelector('.day-heading time')?.getAttribute('datetime')).toBe('2026-11-09');
     await navigate('Previous');
     expect(fixture.componentInstance.weekRange().startDate).toBe('2026-11-02');
     await navigate('Previous');
@@ -120,7 +162,7 @@ describe('WeekView', () => {
       startDate: '2026-11-08',
       endDate: '2026-11-14',
     });
-    expect(element.querySelector('thead th:nth-child(2)')?.textContent).toContain('Sunday');
+    expect(element.querySelector('.day-heading')?.textContent).toContain('Sunday');
     await setWeekStart('monday');
     expect(fixture.componentInstance.weekRange().startDate).toBe('2026-11-09');
   });
@@ -144,9 +186,9 @@ describe('WeekView', () => {
       .query(By.directive(ToggleSwitch))
       .triggerEventHandler('ngModelChange', false);
     await fixture.whenStable();
-    expect(element.querySelectorAll('thead time')).toHaveLength(5);
-    expect(element.querySelector('thead time')?.getAttribute('datetime')).toBe('2026-11-02');
-    expect(element.querySelectorAll('tbody tr:first-child td')).toHaveLength(5);
+    expect(element.querySelectorAll('.day-heading time')).toHaveLength(5);
+    expect(element.querySelector('.day-heading time')?.getAttribute('datetime')).toBe('2026-11-02');
+    expect(element.querySelectorAll('.calendar-row:nth-child(2) .hour-cell')).toHaveLength(5);
     expect(fixture.componentInstance.weekRange()).toEqual(range);
     expect(element.querySelector('.week-range')?.textContent).toBe('1/nov/2026 - 7/nov/2026');
   });
@@ -166,7 +208,58 @@ describe('WeekView', () => {
       await fixture.whenStable();
       await navigate('Next');
       expect(fixture.componentInstance.weekRange()).toEqual({ startDate, endDate });
-      expect(element.querySelectorAll('thead time')).toHaveLength(7);
+      expect(element.querySelectorAll('.day-heading time')).toHaveLength(7);
     },
   );
+
+  function expectActivityColumns(): void {
+    const dates = Array.from(element.querySelectorAll('.day-heading time'), (time) =>
+      time.getAttribute('datetime'),
+    );
+    const columns = element.querySelectorAll<HTMLElement>('.activity-column');
+    expect(columns).toHaveLength(dates.length);
+    columns.forEach((column, index) => {
+      expect(column.style.gridColumn).toBe(String(index + 2));
+      expect(Array.from(column.querySelectorAll('label'), (label) => label.textContent)).toEqual(
+        activities
+          .filter((activity) => activity.date === dates[index])
+          .map((activity) => activity.name),
+      );
+    });
+  }
+
+  it('places API activities in their dated columns independently of the current-time indicator', () => {
+    expect(element.querySelector('.activity-layer')?.firstElementChild?.className).toBe(
+      'current-time-indicator',
+    );
+    expectActivityColumns();
+    expect(element.querySelectorAll('app-activity-item')).toHaveLength(3);
+    const cards = element.querySelectorAll<HTMLElement>('app-activity-item');
+    expect(Array.from(cards, (card) => card.style.getPropertyValue('--start'))).toEqual([
+      '1140',
+      '540',
+      '1230',
+    ]);
+    expect(Array.from(cards, (card) => card.style.getPropertyValue('--duration'))).toEqual([
+      '90',
+      '60',
+      '60',
+    ]);
+  });
+
+  it('keeps activity columns aligned when changing week start and hiding weekends', async () => {
+    await setWeekStart('sunday');
+    expectActivityColumns();
+    expect(element.querySelectorAll('app-activity-item')).toHaveLength(1);
+    await navigate('Next');
+    expectActivityColumns();
+    expect(element.querySelector('.activity-column')?.textContent).toContain('Walk the dog');
+    expect(element.querySelectorAll('app-activity-item')).toHaveLength(2);
+    fixture.debugElement
+      .query(By.directive(ToggleSwitch))
+      .triggerEventHandler('ngModelChange', false);
+    await fixture.whenStable();
+    expectActivityColumns();
+    expect(element.querySelectorAll('app-activity-item')).toHaveLength(0);
+  });
 });

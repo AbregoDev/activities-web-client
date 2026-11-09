@@ -213,12 +213,6 @@ h1 {
 .activity-column {
   position: relative;
   grid-row: 1;
-
-  @for $i from 1 through 7 {
-    &:nth-child(#{$i}) {
-      grid-column: #{$i + 1};
-    }
-  }
 }
 
 .activity {

@@ -86,7 +86,7 @@
           [style.--current-time-minutes]="currentTimePositionMinutes()"
         ></div>
         @for (day of visibleDays(); track day.dateKey) {
-          <div class="activity-column">
+          <div class="activity-column" [style.grid-column]="$index + 2">
             @for (item of activitiesByDay().get(day.dateKey); track item.activity.id) {
               <app-activity-item
                 class="activity"
