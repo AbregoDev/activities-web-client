@@ -1,5 +1,5 @@
 <p-dialog
-  header="New activity"
+  [header]="activity() ? 'Edit activity' : 'New activity'"
   [visible]="visible()"
   [modal]="true"
   [closable]="!isSubmitting()"
@@ -74,7 +74,15 @@
     <div class="form-actions">
       <button type="button" [disabled]="isSubmitting()" (click)="close()">Cancel</button>
       <button type="submit" [disabled]="isSubmitting()">
-        {{ isSubmitting() ? 'Creating…' : 'Create activity' }}
+        {{
+          isSubmitting()
+            ? activity()
+              ? 'Updating…'
+              : 'Creating…'
+            : activity()
+              ? 'Update activity'
+              : 'Create activity'
+        }}
       </button>
     </div>
   </form>

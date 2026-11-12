@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, defer, of, tap } from 'rxjs';
-import { Activity, CreateActivityRequest } from './activity.interface';
+import { Activity, CreateActivityRequest, UpdateActivityRequest } from './activity.interface';
 
 interface CachedActivities {
   readonly activities: readonly Activity[];
@@ -51,10 +51,28 @@ export class ActivitiesService {
     return this.http.post<Activity>('/api/activities', request);
   }
 
+  updateActivity(id: string, request: UpdateActivityRequest): Observable<Activity> {
+    return this.http.patch<Activity>(`/api/activities/${id}`, request).pipe(
+      tap((updated) => {
+        this.invalidateActivityMonths(updated.id, updated.date);
+      }),
+    );
+  }
+
   updateActivityCompletion(id: string, isCompleted: boolean): Observable<Activity> {
     return this.http
       .patch<Activity>(`/api/activities/${id}`, { isCompleted })
       .pipe(tap((updated) => this.patchActivityInCache(updated)));
+  }
+
+  private invalidateActivityMonths(id: string, updatedDate: string): void {
+    for (const [key, entry] of this.cache) {
+      if (entry.activities.some((activity) => activity.id === id)) {
+        this.cache.delete(key);
+      }
+    }
+
+    this.cache.delete(updatedDate.slice(0, 7));
   }
 
   private patchActivityInCache(updated: Activity): void {

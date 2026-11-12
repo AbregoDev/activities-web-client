@@ -10,7 +10,7 @@
         <button type="button" [disabled]="loadingActivities()" (click)="refreshActivities()">
           Refresh
         </button>
-        <button type="button" (click)="createActivityDialogVisible.set(true)">New activity</button>
+        <button type="button" (click)="openCreateActivityDialog()">New activity</button>
       </nav>
     </div>
     <div class="week-options">
@@ -39,8 +39,9 @@
 
   <app-create-activity-dialog
     [visible]="createActivityDialogVisible()"
+    [activity]="selectedActivity()"
     (visibleChange)="createActivityDialogVisible.set($event)"
-    (activityCreated)="activityCreated()"
+    (activitySaved)="activitySaved()"
   />
 
   <div class="calendar-scroll" tabindex="0" role="region" aria-label="Hourly week calendar">
@@ -94,6 +95,7 @@
                 [style.--duration]="item.durationMinutes"
                 [activity]="item.activity"
                 (completedChange)="setActivityCompleted(item.activity.id, $event)"
+                (editRequested)="editActivity(item.activity)"
               />
             }
           </div>

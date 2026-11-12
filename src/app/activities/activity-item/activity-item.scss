@@ -8,24 +8,49 @@
   overflow: hidden;
   border-left: 3px solid var(--p-primary-color, #047857);
   border-radius: 0.25rem;
-  background: color-mix(in srgb, var(--p-primary-color, #047857) 30%, var(--p-content-background, #fff));
+  background: color-mix(
+    in srgb,
+    var(--p-primary-color, #047857) 30%,
+    var(--p-content-background, #fff)
+  );
   color: var(--p-text-color, #27272a);
   font-size: 0.8125rem;
+  cursor: pointer;
 }
 
 :host(.completed) {
-  background: color-mix(in srgb, var(--p-primary-color, #047857) 10%, var(--p-content-background, #fff));
+  background: color-mix(
+    in srgb,
+    var(--p-primary-color, #047857) 10%,
+    var(--p-content-background, #fff)
+  );
 
-  label {
+  .activity-name {
     text-decoration: line-through;
   }
 }
 
-label {
+.completion-checkbox {
+  flex: none;
+}
+
+.activity-name {
   min-width: 0;
+  flex: 1;
   overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
   line-height: 1.25rem;
+  text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color, #047857);
+    outline-offset: 1px;
+  }
 }

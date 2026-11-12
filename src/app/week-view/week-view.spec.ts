@@ -5,7 +5,7 @@ import { ToggleSwitch } from 'primeng/toggleswitch';
 import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ActivitiesService } from '../activities/activities.service';
-import { Activity } from '../activities/activity.interface';
+import { Activity, UpdateActivityRequest } from '../activities/activity.interface';
 import { WeekView } from './week-view';
 
 describe('WeekView', () => {
@@ -40,16 +40,27 @@ describe('WeekView', () => {
       isCompleted: false,
     },
   ];
+  const activitiesService = {
+    getActivitiesByMonth: vi.fn((_year: number, _month: number, _refresh = false) =>
+      of(activities),
+    ),
+    updateActivity: vi.fn(),
+    updateActivityCompletion: vi.fn(),
+  };
 
   beforeEach(async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date(2026, 10, 6, 12));
+    activitiesService.getActivitiesByMonth.mockReset();
+    activitiesService.getActivitiesByMonth.mockReturnValue(of(activities));
+    activitiesService.updateActivity.mockReset();
+    activitiesService.updateActivityCompletion.mockReset();
     await TestBed.configureTestingModule({
       imports: [WeekView],
       providers: [
         {
           provide: ActivitiesService,
-          useValue: { getActivitiesByMonth: () => of(activities) },
+          useValue: activitiesService,
         },
       ],
     }).compileComponents();
@@ -220,7 +231,11 @@ describe('WeekView', () => {
     expect(columns).toHaveLength(dates.length);
     columns.forEach((column, index) => {
       expect(column.style.gridColumn).toBe(String(index + 2));
-      expect(Array.from(column.querySelectorAll('label'), (label) => label.textContent)).toEqual(
+      expect(
+        Array.from(column.querySelectorAll('.activity-name'), (button) =>
+          button.textContent?.trim(),
+        ),
+      ).toEqual(
         activities
           .filter((activity) => activity.date === dates[index])
           .map((activity) => activity.name),
@@ -261,5 +276,57 @@ describe('WeekView', () => {
     await fixture.whenStable();
     expectActivityColumns();
     expect(element.querySelectorAll('app-activity-item')).toHaveLength(0);
+  });
+
+  it('updates an activity and refreshes it into its new calendar position', async () => {
+    const updatedActivity: Activity = {
+      ...activities[0],
+      name: 'Updated Study Statistic',
+      date: '2026-11-08',
+      startTime: '08:00:00',
+      endTime: '09:00:00',
+    };
+    const updatedActivities = [updatedActivity, ...activities.slice(1)];
+    activitiesService.getActivitiesByMonth.mockImplementation(
+      (_year: number, _month: number, refresh = false) =>
+        of(refresh ? updatedActivities : activities),
+    );
+    activitiesService.updateActivity.mockReturnValue(of(updatedActivity));
+
+    const card = element.querySelector<HTMLElement>('app-activity-item')!;
+    card.querySelector('p-checkbox')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(element.textContent).not.toContain('Edit activity');
+
+    card.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(element.textContent).toContain('Edit activity');
+
+    const nameInput = element.querySelector<HTMLInputElement>('#activity-name')!;
+    nameInput.value = 'Updated Study Statistic';
+    nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+    const form = element.querySelector('form')!;
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const request: UpdateActivityRequest = {
+      name: updatedActivity.name,
+      date: activities[0].date,
+      startTime: activities[0].startTime,
+      endTime: activities[0].endTime,
+    };
+    expect(activitiesService.updateActivity).toHaveBeenCalledWith(activities[0].id, request);
+    expect(activitiesService.getActivitiesByMonth).toHaveBeenLastCalledWith(2026, 11, true);
+
+    const sundayColumn = element.querySelectorAll<HTMLElement>('.activity-column')[6];
+    expect(sundayColumn.querySelector('.activity-name')?.textContent?.trim()).toBe(
+      updatedActivity.name,
+    );
+    expect(sundayColumn.querySelector('app-activity-item')?.getAttribute('style')).toContain(
+      '--start: 480',
+    );
   });
 });

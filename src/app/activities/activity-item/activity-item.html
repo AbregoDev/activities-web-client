@@ -1,7 +1,12 @@
-<p-checkbox
-  [inputId]="'activity-' + activity().id"
-  [binary]="true"
-  [ngModel]="activity().isCompleted"
-  (ngModelChange)="completedChange.emit($event)"
-/>
-<label [for]="'activity-' + activity().id" [title]="activity().name">{{ activity().name }}</label>
+<div class="completion-checkbox" (click)="$event.stopPropagation()">
+  <p-checkbox
+    [inputId]="'activity-' + activity().id"
+    [binary]="true"
+    [ngModel]="activity().isCompleted"
+    (ngModelChange)="completedChange.emit($event)"
+    [ariaLabel]="'Mark ' + activity().name + ' as complete'"
+  />
+</div>
+<button type="button" class="activity-name" [title]="activity().name">
+  {{ activity().name }}
+</button>

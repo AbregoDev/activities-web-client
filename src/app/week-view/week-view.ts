@@ -56,6 +56,7 @@ export class WeekView {
   protected readonly showWeekends = signal(true);
   protected readonly loadingActivities = signal(false);
   protected readonly createActivityDialogVisible = signal(false);
+  protected readonly selectedActivity = signal<Activity | null>(null);
   private readonly activities = signal<readonly Activity[]>([]);
   protected readonly startOptions = [
     { label: 'Monday', value: 'monday' },
@@ -181,8 +182,19 @@ export class WeekView {
     }
   }
 
-  protected activityCreated(): void {
+  protected openCreateActivityDialog(): void {
+    this.selectedActivity.set(null);
+    this.createActivityDialogVisible.set(true);
+  }
+
+  protected editActivity(activity: Activity): void {
+    this.selectedActivity.set(activity);
+    this.createActivityDialogVisible.set(true);
+  }
+
+  protected activitySaved(): void {
     this.createActivityDialogVisible.set(false);
+    this.selectedActivity.set(null);
     this.refreshRequests.next();
   }
 
