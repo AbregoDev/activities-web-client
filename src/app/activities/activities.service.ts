@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, defer, of, tap } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { Activity, CreateActivityRequest, UpdateActivityRequest } from './activity.interface';
 
 interface CachedActivities {
@@ -11,6 +12,7 @@ interface CachedActivities {
 @Injectable({ providedIn: 'root' })
 export class ActivitiesService {
   private readonly http = inject(HttpClient);
+  private readonly apiUrl = `${environment.baseUrl}/api/activities`;
   private readonly cache = new Map<string, CachedActivities>();
   private readonly cacheTtlMs = 5 * 60 * 1000;
   private readonly maxCachedMonths = 5;
@@ -39,7 +41,7 @@ export class ActivitiesService {
         return of(cached.activities);
       }
 
-      const url = '/api/activities/GetActivitiesByMonth';
+      const url = `${this.apiUrl}/GetActivitiesByMonth`;
       const params = { year, month };
       return this.http
         .get<readonly Activity[]>(url, { params })
@@ -48,11 +50,11 @@ export class ActivitiesService {
   }
 
   createActivity(request: CreateActivityRequest): Observable<Activity> {
-    return this.http.post<Activity>('/api/activities', request);
+    return this.http.post<Activity>(this.apiUrl, request);
   }
 
   updateActivity(id: string, request: UpdateActivityRequest): Observable<Activity> {
-    return this.http.patch<Activity>(`/api/activities/${id}`, request).pipe(
+    return this.http.patch<Activity>(`${this.apiUrl}/${id}`, request).pipe(
       tap((updated) => {
         this.invalidateActivityMonths(updated.id, updated.date);
       }),
@@ -61,7 +63,7 @@ export class ActivitiesService {
 
   updateActivityCompletion(id: string, isCompleted: boolean): Observable<Activity> {
     return this.http
-      .patch<Activity>(`/api/activities/${id}`, { isCompleted })
+      .patch<Activity>(`${this.apiUrl}/${id}`, { isCompleted })
       .pipe(tap((updated) => this.patchActivityInCache(updated)));
   }
 
